@@ -42,6 +42,12 @@ func handlerKeyframe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token := r.URL.Query().Get("token")
+	if strings.Contains(r.Host, "dride.cloud") && app.IsProtectedPath(r.URL.Path) && !app.VerifyAssetToken(token)  {
+		http.Error(w, "403 - Forbidden", http.StatusForbidden)
+		return
+	}
+
 	cons := magic.NewKeyframe()
 	cons.WithRequest(r)
 
@@ -82,6 +88,12 @@ func handlerKeyframe(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlerStream(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	if strings.Contains(r.Host, "dride.cloud") && app.IsProtectedPath(r.URL.Path) && !app.VerifyAssetToken(token)  {
+		http.Error(w, "403 - Forbidden", http.StatusForbidden)
+		return
+	}
+
 	if r.Method != "POST" {
 		outputMjpeg(w, r)
 	} else {
@@ -170,6 +182,12 @@ func handlerWS(tr *ws.Transport, _ *ws.Message) error {
 }
 
 func apiStreamY4M(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	if strings.Contains(r.Host, "dride.cloud") && app.IsProtectedPath(r.URL.Path) && !app.VerifyAssetToken(token)  {
+		http.Error(w, "403 - Forbidden", http.StatusForbidden)
+		return
+	}
+
 	src := r.URL.Query().Get("src")
 	stream := streams.Get(src)
 	if stream == nil {

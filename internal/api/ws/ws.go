@@ -100,6 +100,12 @@ func initWS(origin string) {
 }
 
 func apiWS(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	if strings.Contains(r.Host, "dride.cloud") && app.IsProtectedPath(r.URL.Path) && !app.VerifyAssetToken(token)  {
+		http.Error(w, "403 - Forbidden", http.StatusForbidden)
+		return
+	}
+
 	ws, err := wsUp.Upgrade(w, r, nil)
 	if err != nil {
 		origin := r.Header.Get("Origin")

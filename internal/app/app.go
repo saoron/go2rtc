@@ -1,12 +1,18 @@
 package app
 
 import (
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
 	"runtime/debug"
+	"strings"
+	"time"
 )
 
 var (
@@ -98,4 +104,72 @@ func readRevisionTime() (revision, vcsTime string) {
 		}
 	}
 	return
+}
+
+
+type AssetToken struct {
+	Token     string
+	ExpiresAt int64
+}
+
+func VerifyAssetToken(tokenToCompare string) bool {
+	if tokenToCompare == "" {
+		return false
+	}
+
+	tokens := DBRead("assetTokens")
+	if tokens == "" {
+		tokens = "[]"
+	}
+	var tokensObject []AssetToken
+	err := json.Unmarshal([]byte(tokens), &tokensObject)
+	if err != nil {
+		fmt.Println("Failed to unmarshal asset token " + err.Error())
+		return false
+	}
+
+	for _, token := range tokensObject {
+		if (token.Token == tokenToCompare) && (token.ExpiresAt-time.Now().Unix()) > 0 {
+			return true
+		}
+	}
+	fmt.Println("token not found!")
+	return false
+}
+
+func DBRead(key string) string {
+	key = strings.ToLower(key)
+	resp, err := Get("http://127.0.0.1:4000/read?key="+key, 1)
+
+	if err != nil {
+		return ""
+	}
+	return resp
+}
+
+func Get(url string, retry int) (string, error) {
+	if retry <= 0 {
+		return "", errors.New("Max retries reached " + url)
+	}
+
+	resp, err := http.Get(url)
+
+	if err != nil {
+		time.Sleep(time.Millisecond * 100)
+		return Get(url, retry-1)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		time.Sleep(time.Millisecond * 250)
+		return Get(url, retry-1)
+	}
+	return string(body), nil
+}
+
+
+
+func IsProtectedPath(path string) bool {
+	return  strings.Contains((path), ".html") ||
+		strings.Contains((path), ".jpeg") 
 }
