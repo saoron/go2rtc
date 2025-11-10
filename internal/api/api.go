@@ -46,6 +46,7 @@ func Init() {
 	basePath = cfg.Mod.BasePath
 	log = app.GetLogger("api")
 
+	
 	initStatic(cfg.Mod.StaticDir)
 
 	HandleFunc("api", apiHandler)
