@@ -171,5 +171,6 @@ func Get(url string, retry int) (string, error) {
 
 func IsProtectedPath(path string) bool {
 	return  strings.Contains((path), ".html") ||
-		strings.Contains((path), ".jpeg") 
+		strings.Contains((path), ".jpeg") ||
+		strings.Contains((path), "/api/") 
 }
