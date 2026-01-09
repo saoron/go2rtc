@@ -1,18 +1,18 @@
 package app
 
 import (
+	"database/sql"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	_ "modernc.org/sqlite"
 )
 
 var (
@@ -21,6 +21,12 @@ var (
 	ConfigPath string
 	Info       = make(map[string]any)
 )
+
+var cfg struct {
+	DB struct {
+		Path string `yaml:"path"`
+	} `yaml:"db"`
+}
 
 const usage = `Usage of go2rtc:
 
@@ -74,6 +80,7 @@ func Init() {
 
 	initConfig(config)
 	initLogger()
+	initDB()
 
 	platform := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
 	Logger.Info().Str("version", Version).Str("platform", platform).Str("revision", revision).Msg("go2rtc")
@@ -137,34 +144,26 @@ func VerifyAssetToken(tokenToCompare string) bool {
 	return false
 }
 
+func initDB() {
+	cfg.DB.Path = "/mnt/UDISK/db/dride.db" // default
+	LoadConfig(&cfg)
+}
+
 func DBRead(key string) string {
 	key = strings.ToLower(key)
-	resp, err := Get("http://127.0.0.1:4000/read?key="+key, 1)
 
+	db, err := sql.Open("sqlite", cfg.DB.Path+"?mode=ro")
 	if err != nil {
 		return ""
 	}
-	return resp
-}
+	defer db.Close()
 
-func Get(url string, retry int) (string, error) {
-	if retry <= 0 {
-		return "", errors.New("Max retries reached " + url)
-	}
-
-	resp, err := http.Get(url)
-
+	var value string
+	err = db.QueryRow("SELECT value FROM kv WHERE key = ?", key).Scan(&value)
 	if err != nil {
-		time.Sleep(time.Millisecond * 100)
-		return Get(url, retry-1)
+		return ""
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		time.Sleep(time.Millisecond * 250)
-		return Get(url, retry-1)
-	}
-	return string(body), nil
+	return value
 }
 
 
