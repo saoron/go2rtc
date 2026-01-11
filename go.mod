@@ -27,7 +27,9 @@ require (
 )
 
 require (
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -41,6 +43,7 @@ require (
 	github.com/pion/transport/v3 v3.0.8 // indirect
 	github.com/pion/turn/v4 v4.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/redis/go-redis/v9 v9.17.2 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect

@@ -1,7 +1,7 @@
 package app
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	_ "modernc.org/sqlite"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -22,11 +22,10 @@ var (
 	Info       = make(map[string]any)
 )
 
-var cfg struct {
-	DB struct {
-		Path string `yaml:"path"`
-	} `yaml:"db"`
-}
+var (
+	rdb *redis.Client
+	ctx = context.Background()
+)
 
 const usage = `Usage of go2rtc:
 
@@ -145,25 +144,27 @@ func VerifyAssetToken(tokenToCompare string) bool {
 }
 
 func initDB() {
-	cfg.DB.Path = "/mnt/UDISK/db/dride.db" // default
-	LoadConfig(&cfg)
+	if rdb == nil {
+		rdb = redis.NewClient(&redis.Options{
+			Addr:     "127.0.0.1:6379",
+			Password: "",
+			DB:       0,
+		})
+	}
 }
 
 func DBRead(key string) string {
 	key = strings.ToLower(key)
 
-	db, err := sql.Open("sqlite", cfg.DB.Path+"?mode=ro")
-	if err != nil {
-		return ""
+	if rdb == nil {
+		initDB()
 	}
-	defer db.Close()
 
-	var value string
-	err = db.QueryRow("SELECT value FROM kv WHERE key = ?", key).Scan(&value)
+	resp, err := rdb.Get(ctx, key).Result()
 	if err != nil {
 		return ""
 	}
-	return value
+	return strings.TrimSuffix(resp, "\n")
 }
 
 
